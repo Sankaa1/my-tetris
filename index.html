@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris ++</title>
+    <link rel="stylesheet" href="css/tetris.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">TETRIS<span class="accent">++</span></h1>
+            <div class="game-info">
+                <div class="info-box">
+                    <span class="label">SCORE</span>
+                    <span id="score" class="value">000000</span>
+                </div>
+                <div class="info-box" id="timer-container" style="display: none;">
+                    <span class="label">TEMPS</span>
+                    <span id="timer" class="value">00:00.00</span>
+                </div>
+                <div class="info-box">
+                    <span class="label">LIGNES</span>
+                    <span id="lines" class="value">000</span>
+                </div>
+                <div class="info-box">
+                    <span class="label">NIVEAU</span>
+                    <span id="level" class="value">01</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="game-area">
+            <div class="side-panel left-panel">
+                <div class="next-piece">
+                    <h3>SUIVANT</h3>
+                    <div id="next-piece" class="piece-preview"></div>
+                </div>
+                <div class="hold-piece">
+                    <h3>RÉSERVE</h3>
+                    <div id="hold-piece" class="piece-preview"></div>
+                    <button id="hold-btn" class="hold-btn">HOLD (C)</button>
+                </div>
+            </div>
+
+            <div class="game-board">
+                <div id="grid" class="grid"></div>
+                <div class="controls">
+                    <div class="control-group">
+                        <kbd>←</kbd><kbd>→</kbd> Déplacement
+                    </div>
+                    <div class="control-group">
+                        <kbd>↑</kbd> Rotation
+                    </div>
+                    <div class="control-group">
+                        <kbd>↓</kbd> Descente rapide
+                    </div>
+                    <div class="control-group">
+                        <kbd>Espace</kbd> Chute instantanée
+                    </div>
+                    <div class="control-group">
+                        <kbd>C</kbd> Réservation
+                    </div>
+                </div>
+            </div>
+            
+            <div class="side-panel right-panel">
+                <div class="game-modes">
+                    <h3>MODES DE JEU</h3>
+                    <button class="mode-btn active" data-mode="marathon">MARATHON</button>
+                    <button class="mode-btn" data-mode="sprint">SPRINT</button>
+                    <button class="mode-btn" data-mode="survival">SURVIE</button>
+                </div>
+
+                <div class="high-scores">
+                    <h3>MEILLEURS SCORES</h3>
+                    <div id="high-scores" class="scores-list"></div>
+                </div>
+            </div>
+        </main>
+
+        <div class="game-controls">
+            <button id="start-btn" class="btn primary">JOUER</button>
+            <button id="pause-btn" class="btn secondary">PAUSE</button>
+            <button id="reset-btn" class="btn danger">RECOMMENCER</button>
+        </div>
+
+        <!-- Overlay de démarrage -->
+        <div id="start-overlay" class="overlay active">
+            <div class="overlay-content">
+                <h2>PRÊT À JOUER ?</h2>
+                <!-- Sélection de mode -->
+                <div class="mode-select">
+                    <button class="mode-btn active" data-mode="marathon">🏃 Marathon</button>
+                    <button class="mode-btn" data-mode="sprint">⚡Sprint</button>
+                    <button class="mode-btn" data-mode="survival">💀 Survie</button>
+                </div>
+                <!-- Description dynamique -->
+                <div class="mode-descriptions">
+                    <p class="mode-text">Mode classique sans fin…</p>
+                </div>
+                <!-- Options audio -->
+                <div class="audio-settings">
+                    <h3>Paramètres Audio</h3>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" class="music-toggle">
+                            Musique ?
+                        </label>
+                        <label>
+                            <input type="checkbox" class="fx-toggle" checked>
+                            Effets ?
+                        </label>
+                    </div>
+                    <!-- Sliders -->
+                    <div class="slider-group">
+                        <label for="music-volume">Volume de la musique</label>
+                        <input type="range" class="music-volume" min="0" max="100">
+
+                        <label for="fx-volume">Volume des effets</label>
+                        <input type="range" class="fx-volume" min="0" max="100">
+                    </div>
+                </div>
+                <button id="start-game-btn" class="btn large primary">COMMENCER</button>
+            </div>
+        </div>
+
+        <!-- Overlay de pause -->
+        <div id="pause-overlay" class="overlay">
+            <div class="overlay-content">
+                <h2>JEU EN PAUSE</h2>
+                
+                <!-- Options audio -->
+                <div class="audio-settings">
+                    <h3>Paramètres Audio</h3>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" class="music-toggle">
+                            Musique ?
+                        </label>
+                        <label>
+                            <input type="checkbox" class="fx-toggle">
+                            Effets ?
+                        </label>
+                    </div>
+                    <!-- Sliders -->
+                    <div class="slider-group">
+                        <label for="music-volume">Volume de la musique</label>
+                        <input type="range" class="music-volume" min="0" max="100">
+
+                        <label for="fx-volume">Volume des effets</label>
+                        <input type="range" class="fx-volume" min="0" max="100">
+                    </div>
+                </div>
+
+                <button id="resume-btn" class="btn large primary">REPRENDRE [P]</button>
+            </div>
+        </div>
+
+        <!-- Overlay de game over -->
+        <div id="game-over-overlay" class="overlay">
+            <div class="overlay-content">
+                <h2 id="game-over-title">GAME OVER</h2>
+                <div class="final-stats">
+                    <p>Score final: <span id="final-score">0</span></p>
+                    <p id="time-info" style="display: none;">Temps: <span id="final-time">00:00.00</span></p>
+                </div>
+                <button id="restart-btn" class="btn large primary">REJOUER</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="js/GameModeManager.js"></script>
+    <script src="js/SoundManager.js"></script>
+    <script src="js/TetrominoManager.js"></script>
+    <script src="js/ParticleManager.js"></script>
+    <script src="js/EffectsManager.js"></script>
+    <script src="js/ControlsManager.js"></script>
+    <script src="js/Tetris.js"></script>
+</body>
+</html>
