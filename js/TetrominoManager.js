@@ -69,11 +69,23 @@ class TetrominoManager {
         L: '#ffa500'
     };
 
-    static getRandomPiece() {
+    // 7-bag randomizer for fair distribution of pieces
+    static _bag = [];
+
+    static refillBag() {
         const keys = Object.keys(this.PIECES);
-        const key = keys[Math.floor(Math.random() * keys.length)];
+        // Fisher-Yates shuffle
+        for (let i = keys.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [keys[i], keys[j]] = [keys[j], keys[i]];
+        }
+        this._bag.push(...keys);
+    }
+
+    static getRandomPiece() {
+        if (this._bag.length === 0) this.refillBag();
+        const key = this._bag.shift();
         const def = this.PIECES[key];
-        
         return {
             shape: JSON.parse(JSON.stringify(def.shape)),
             color: def.color

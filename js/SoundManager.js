@@ -31,10 +31,14 @@ class SoundManager {
         this.enabled = true;
         this.musicEnabled = true;
         this.fxEnabled = true;
-        
+
         this.masterVolume = 1.0;
         this.sfxVolume = 0.5;
         this.musicVolume = 0.5;
+
+        // Charger les réglages persistés si disponibles
+        this._storageKey = 'tetrisAudioSettings';
+        this.loadSettings();
     }
 
     loadSounds() {
@@ -104,10 +108,12 @@ class SoundManager {
                 // C'est un pool
                 poolOrAudio.forEach(audio => {
                     audio.volume = this.masterVolume * this.sfxVolume;
+                    audio.muted = !this.fxEnabled || !this.enabled;
                 });
             } else {
                 // C'est un Audio simple (ancienne compatibilité)
                 poolOrAudio.volume = this.masterVolume * this.sfxVolume;
+                poolOrAudio.muted = !this.fxEnabled || !this.enabled;
             }
         });
 
@@ -119,22 +125,26 @@ class SoundManager {
         allTracks.forEach(audio => {
             if (!audio) return;
             audio.volume = this.masterVolume * this.musicVolume;
+            audio.muted = !this.musicEnabled || !this.enabled;
         });
     }
 
     setMasterVolume(value) {
         this.masterVolume = this._clamp01(value);
         this.updateVolumes();
+        this.saveSettings();
     }
 
     setSfxVolume(value) {
         this.sfxVolume = this._clamp01(value);
         this.updateVolumes();
+        this.saveSettings();
     }
 
     setMusicVolume(value) {
         this.musicVolume = this._clamp01(value);
         this.updateVolumes();
+        this.saveSettings();
     }
 
     toggleMusic(enabled) {
@@ -146,6 +156,8 @@ class SoundManager {
                 this.startCurrentTrack();
             }
         }
+        this.updateVolumes();
+        this.saveSettings();
     }
 
     toggleFx(enabled) {
@@ -153,6 +165,41 @@ class SoundManager {
         if (!enabled) {
             // Arrêter tous les sons en cours
             this.stopAllSfx();
+        }
+        this.updateVolumes();
+        this.saveSettings();
+    }
+
+    // Persist audio settings to localStorage
+    saveSettings() {
+        try {
+            const payload = {
+                enabled: this.enabled,
+                musicEnabled: this.musicEnabled,
+                fxEnabled: this.fxEnabled,
+                masterVolume: this.masterVolume,
+                sfxVolume: this.sfxVolume,
+                musicVolume: this.musicVolume
+            };
+            localStorage.setItem(this._storageKey, JSON.stringify(payload));
+        } catch (e) {
+            console.warn('Impossible de sauvegarder les réglages audio:', e);
+        }
+    }
+
+    loadSettings() {
+        try {
+            const raw = localStorage.getItem(this._storageKey);
+            if (!raw) return;
+            const obj = JSON.parse(raw);
+            if (typeof obj.enabled === 'boolean') this.enabled = obj.enabled;
+            if (typeof obj.musicEnabled === 'boolean') this.musicEnabled = obj.musicEnabled;
+            if (typeof obj.fxEnabled === 'boolean') this.fxEnabled = obj.fxEnabled;
+            if (typeof obj.masterVolume === 'number') this.masterVolume = this._clamp01(obj.masterVolume);
+            if (typeof obj.sfxVolume === 'number') this.sfxVolume = this._clamp01(obj.sfxVolume);
+            if (typeof obj.musicVolume === 'number') this.musicVolume = this._clamp01(obj.musicVolume);
+        } catch (e) {
+            console.warn('Impossible de charger les réglages audio:', e);
         }
     }
 

@@ -80,8 +80,9 @@ class Tetris {
     }
 
     bindEvents() {
-        // Contrôles clavier
-        $(document).on('keydown', (e) => ControlsManager.handleKeyPress(this, e));
+        // Contrôles clavier (keydown + keyup pour DAS/ARR)
+        $(document).on('keydown', (e) => ControlsManager.handleKeyDown(this, e));
+        $(document).on('keyup', (e) => ControlsManager.handleKeyUp(this, e));
 
         // Boutons de contrôle
         $('#start-btn').on('click', () => {
@@ -134,7 +135,8 @@ class Tetris {
                 sprint: "Complétez 40 lignes le plus rapidement possible !",
                 survival: "La vitesse augmente toutes les 30 secondes. Tenez bon !"
             };
-            $('.mode-text').text(descriptions[newMode]);
+            //$('.mode-text').text(descriptions[newMode]);
+            $(document).on('click', '.mode-btn', handleModeClick);
 
             // Met à jour l’UI (label LIGNES/RESTANTES + timer + compteur de lignes)
             this.updateModeDisplay();
@@ -424,13 +426,10 @@ class Tetris {
         this.score += linePoints;
         this.updateDisplay();
     }
-        updateLevel() {
-            GameModeManager.updateLevelAndSpeed(this);
-        }
-
-        updateFallSpeed() {
-            GameModeManager.updateLevelAndSpeed(this);
-        }
+        
+    updateLevel() {
+        GameModeManager.updateLevelAndSpeed(this);
+    }
 
     hardDrop() {
         if (!this.currentPiece || this.gameState !== 'playing') return;
