@@ -80,8 +80,9 @@ class Tetris {
     }
 
     bindEvents() {
-        // Contrôles clavier
-        $(document).on('keydown', (e) => ControlsManager.handleKeyPress(this, e));
+        // Contrôles clavier (keydown + keyup pour DAS/ARR)
+        $(document).on('keydown', (e) => ControlsManager.handleKeyDown(this, e));
+        $(document).on('keyup', (e) => ControlsManager.handleKeyUp(this, e));
 
         // Boutons de contrôle
         $('#start-btn').on('click', () => {
