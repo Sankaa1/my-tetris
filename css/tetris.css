@@ -82,16 +82,21 @@ body {
 }
 
 .game-area {
-    display: grid;
+    /* display: grid;
     grid-template-columns: 1fr 2fr 1fr;
     gap: 30px;
-    margin-bottom: 30px;
+    margin-bottom: 30px; */
+    display: flex;
+    justify-content: center;     /* ou space-between si tu préfères */
+    align-items: flex-start;
+    gap: 24px;                   /* espace entre colonnes */
 }
 
 .side-panel {
     display: flex;
     flex-direction: column;
-    gap: 30px;
+    /* gap: 30px; */
+    gap: 16px;
 }
 
 .side-panel h3 {
@@ -135,8 +140,8 @@ body {
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(10, 30px);
-    grid-template-rows: repeat(20, 30px);
+    grid-template-columns: repeat(10, 35px); /* 30px */
+    grid-template-rows: repeat(20, 35px); /* 30px */
     gap: 1px;
     background: rgba(255, 255, 255, 0.1);
     padding: 10px;
@@ -180,14 +185,28 @@ body {
 .cell.ghost.J { border-color: #0000ff; }
 .cell.ghost.L { border-color: #ffa500; }
 
-.controls {
+/* .controls {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 15px;
     margin-top: 20px;
+} */
+
+.side-panel .controls {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+    font-size: 0.9rem;
 }
 
-.control-group {
+.side-panel .controls h3 {
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+    text-align: left;
+}
+ 
+/* .control-group {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -195,6 +214,11 @@ body {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 8px;
     font-size: 0.9rem;
+} */
+
+.control-group {
+    margin-bottom: 4px;
+    white-space: nowrap;
 }
 
 kbd {
@@ -205,6 +229,13 @@ kbd {
     font-size: 0.9rem;
     border: 1px solid #666;
 }
+
+/* .control-group kbd {
+    display: inline-block;
+    min-width: 1.6em;
+    text-align: center;
+    margin-right: 4px;
+} */
 
 .btn {
     padding: 12px 24px;
