@@ -1,4 +1,24 @@
 class Tetris {
+    static PREVIEW_SHAPES = {
+        I:  [   [0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]],    // toujours horizontale
+        O:  [   [1,1],     
+                [1,1]],                                         // toujours carré
+        T: [    [0,1,0],   
+                [1,1,1],  
+                [0,0,0]],                                       // pointe en haut
+        S: [    [0,1,1],   
+                [1,1,0],   
+                [0,0,0]],                                       // On se démerde...
+        Z: [    [1,1,0],   
+                [0,1,1],   
+                [0,0,0]],
+        J: [    [1,0,0],
+                [1,1,1],   
+                [0,0,0]],
+        L: [    [0,0,1],   
+                [1,1,1],   
+                [0,0,0]]
+    };
     constructor(options = {}) {
         this.grid = null;
         this.currentPiece = null;
@@ -449,7 +469,7 @@ class Tetris {
         this.isDropping = false;
     }
 
-    holdPieceAction() {
+    /* holdPieceAction() {
         if (!this.canHold || !this.currentPiece) return;
 
         if (this.holdPiece) {
@@ -489,6 +509,55 @@ class Tetris {
                 color: this.currentPiece.color
             };
             this.spawnPiece();
+        }
+
+        this.canHold = false;
+        this.updateHoldPieceDisplay();
+        this.updateGhostPiece();
+        this.renderGrid();
+    } */
+
+        holdPieceAction() {
+        if (!this.canHold || !this.currentPiece) return;
+
+        if (this.holdPiece) {
+            // ÉCHANGE INTELLIGENT : on garde la rotation exacte des deux pièces
+            const tempShape = JSON.parse(JSON.stringify(this.currentPiece.shape));
+            const tempColor = this.currentPiece.color;
+
+            // On remet la pièce tenue avec sa rotation sauvegardée
+            this.currentPiece.shape = JSON.parse(JSON.stringify(this.holdPiece.shape));
+            this.currentPiece.color = this.holdPiece.color;
+
+            // On sauvegarde l'ancienne pièce courante (avec sa rotation actuelle)
+            this.holdPiece = {
+                shape: tempShape,
+                color: tempColor
+            };
+
+            // Repositionnement au spawn (avec offset propre)
+            const topOffset = TetrominoManager.getTopOffset(this.currentPiece.shape);
+            this.currentPiece.position = { x: 3, y: -topOffset };
+
+            // Vérif collision immédiate → game over si bloqué
+            if (TetrominoManager.checkCollision(
+                this.grid,
+                this.gridSize,
+                this.currentPiece.shape,
+                this.currentPiece.position.x,
+                this.currentPiece.position.y
+            )) {
+                this.gameOver();
+                return;
+            }
+
+        } else {
+            // Premier hold : on sauvegarde la pièce courante telle quelle
+            this.holdPiece = {
+                shape: JSON.parse(JSON.stringify(this.currentPiece.shape)),
+                color: this.currentPiece.color
+            };
+            this.spawnPiece(); // spawn la next
         }
 
         this.canHold = false;
@@ -679,7 +748,7 @@ class Tetris {
         }
     }
 
-    updateNextPieceDisplay() {
+    /* updateNextPieceDisplay() {
         const $nextPiece = $('#next-piece');
         $nextPiece.empty();
 
@@ -741,6 +810,126 @@ class Tetris {
                 $holdPiece.append($cell);
             }
         }
+    } */
+
+    /* renderPreview(piece, container) {
+        if (!container) return;
+        container.empty();
+
+        if (!piece) {
+            // Grille vide 4x4 grise (quand hold est vide)
+            for (let i = 0; i < 16; i++) {
+                container.append('<div class="cell"></div>');
+            }
+            return;
+        }
+
+        // Détection auto du type pour un affichage optimal
+        const isIO = piece.color === 'I' || piece.color === 'O';
+        const gridSize = isIO ? 2 : 4;
+        const cellCount = gridSize * gridSize;
+
+        // On applique la classe CSS intelligente
+        container.removeClass('default large').addClass(isIO ? 'large' : 'default');
+
+        // Normalisation de la shape → toujours 4x4 sauf O
+        let shape = piece.shape;
+        if (piece.color !== 'O') {
+            // Force 4x4
+            while (shape.length < 4) shape.push([0,0,0,0]);
+            shape = shape.map(row => {
+                while (row.length < 4) row.push(0);
+                return row.slice(0, 4);
+            });
+        }
+
+        // Création des cellules
+        for (let i = 0; i < cellCount; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+
+            const r = Math.floor(i / gridSize);
+            const c = i % gridSize;
+
+            if (shape[r] && shape[r][c]) {
+                cell.classList.add('filled', piece.color);
+            }
+
+            container[0].appendChild(cell);
+        }
+    } */
+
+    /* renderPreview(piece, container) {
+        if (!container) return;
+        container.empty();
+
+        // Grille vide quand rien
+        if (!piece) {
+            for (let i = 0; i < 16; i++) {
+                container.append('<div class="cell"></div>');
+            }
+            return;
+        }
+
+        const canonical = Tetris.PREVIEW_SHAPES[piece.color];
+        const isIO = piece.color === 'I' || piece.color === 'O';
+        const gridSize = isIO ? 2 : 4;
+
+        container.removeClass('default large').addClass(isIO ? 'large' : 'default');
+
+        for (let r = 0; r < gridSize; r++) {
+            for (let c = 0; c < gridSize; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+
+                if (canonical[r] && canonical[r][c] === 1) {
+                    cell.classList.add('filled', piece.color);
+                }
+                container[0].appendChild(cell);
+            }
+        }
+    } */
+
+    renderPreview(piece, container) {
+        if (!container) return;
+        container.empty();
+
+        if (!piece) {
+            for (let i = 0; i < 16; i++) {
+                container.append('<div class="cell"></div>');
+            }
+            return;
+        }
+
+        const canonical = Tetris.PREVIEW_SHAPES[piece.color];
+
+        // I et O = affichage spécial, mais I = 4x4 (pas 2x2 !)
+        const isO = piece.color === 'O';
+        const isI = piece.color === 'I';
+        const gridSize = isO ? 2 : 4;  // I passe en 4x4, pas en 2x2
+
+        container.removeClass('default large').addClass(isO ? 'large' : 'default');
+
+        for (let r = 0; r < gridSize; r++) {
+            for (let c = 0; c < gridSize; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+
+                if (canonical[r] && canonical[r][c] === 1) {
+                    cell.classList.add('filled', piece.color);
+                }
+                container[0].appendChild(cell);
+            }
+        }
+    }
+
+    // Remplacement des anciennes fonctions
+    updateNextPieceDisplay() {
+        this.renderPreview(this.nextPiece, $('#next-piece'));
+    }
+
+    updateHoldPieceDisplay() {
+        this.renderPreview(this.holdPiece, $('#hold-piece'));
     }
 
     updateDisplay() {

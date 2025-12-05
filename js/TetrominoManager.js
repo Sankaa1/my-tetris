@@ -58,7 +58,7 @@ class TetrominoManager {
             color: 'L'
         }
     };
-
+    
     static COLORS = {
         I: '#00ffff',
         O: '#ffff00',
@@ -69,12 +69,12 @@ class TetrominoManager {
         L: '#ffa500'
     };
 
-    // 7-bag randomizer for fair distribution of pieces
+    // Sac de pioche à 7 éléments pour garantir une distribution uniforme
     static _bag = [];
 
     static refillBag() {
         const keys = Object.keys(this.PIECES);
-        // Fisher-Yates shuffle
+        // Mélange Fisher-Yates => https://fr.wikipedia.org/wiki/M%C3%A9lange_de_Fisher-Yates
         for (let i = keys.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [keys[i], keys[j]] = [keys[j], keys[i]];
@@ -131,4 +131,30 @@ class TetrominoManager {
         return false;
     }
 
+    renderPreview(piece, container) {
+        if (!container) return;
+        container.empty();
+
+        if (!piece) {
+            for (let i = 0; i < 16; i++) container.append('<div class="cell"></div>');
+            return;
+        }
+
+        const canonical = Tetris.PREVIEW_SHAPES[piece.color];
+        const isIO = piece.color === 'I' || piece.color === 'O';
+        const gridSize = isIO ? 2 : 4;
+
+        container.removeClass('default large').addClass(isIO ? 'large' : 'default');
+
+        for (let r = 0; r < gridSize; r++) {
+            for (let c = 0; c < gridSize; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                if (canonical[r] && canonical[r][c]) {
+                    cell.classList.add('filled', piece.color);
+                }
+                container[0].appendChild(cell);
+            }
+        }
+    }
 }
