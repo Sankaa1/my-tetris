@@ -1,23 +1,47 @@
 class Tetris {
     static PREVIEW_SHAPES = {
-        I:  [   [0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]],    // toujours horizontale
-        O:  [   [1,1],     
-                [1,1]],                                         // toujours carré
-        T: [    [0,1,0],   
-                [1,1,1],  
-                [0,0,0]],                                       // pointe en haut
-        S: [    [0,1,1],   
-                [1,1,0],   
-                [0,0,0]],                                       // On se démerde...
-        Z: [    [1,1,0],   
-                [0,1,1],   
-                [0,0,0]],
-        J: [    [1,0,0],
-                [1,1,1],   
-                [0,0,0]],
-        L: [    [0,0,1],   
-                [1,1,1],   
-                [0,0,0]]
+        I:  [               // toujours horizontale  
+                [0,0,0,0], 
+                [1,1,1,1], 
+                [0,0,0,0], 
+                [0,0,0,0]
+            ],
+        O:  [               // toujours carré
+                [0,0,0,0],
+                [0,1,1,0],     
+                [0,1,1,0],     
+                [0,0,0,0]
+            ],
+        T:  [               // pointe en haut   
+                [0,0,0,0],
+                [0,1,0,0],   
+                [1,1,1,0],  
+                [0,0,0,0]
+            ],
+        S:  [               // On se démerde...   
+                [0,0,0,0],
+                [0,0,1,1],   
+                [0,1,1,0],   
+                [0,0,0,0]
+            ],
+        Z:  [    
+                [0,0,0,0],
+                [1,1,0,0],   
+                [0,1,1,0],   
+                [0,0,0,0]
+            ],
+        J:  [    
+                [0,0,0,0],
+                [1,0,0,0],
+                [1,1,1,0],   
+                [0,0,0,0]
+            ],
+        L:  [    
+                [0,0,0,0],
+                [0,0,0,1],   
+                [0,1,1,1],   
+                [0,0,0,0]
+            ]
     };
     constructor(options = {}) {
         this.grid = null;
@@ -469,55 +493,7 @@ class Tetris {
         this.isDropping = false;
     }
 
-    /* holdPieceAction() {
-        if (!this.canHold || !this.currentPiece) return;
-
-        if (this.holdPiece) {
-            
-            // Echange avec la pièce en réserve
-            const temp = {
-                shape: JSON.parse(JSON.stringify(this.currentPiece.shape)),
-                color: this.currentPiece.color
-            };
-
-            const newShape = JSON.parse(JSON.stringify(this.holdPiece.shape));
-            const topOffset = TetrominoManager.getTopOffset(newShape);
-
-            this.currentPiece = {
-                shape: newShape,
-                color: this.holdPiece.color,
-                position: { x: 3, y: -topOffset }
-            };
-
-            this.holdPiece = temp;
-
-            // Vérifier si la nouvelle pièce peut être placée
-            if (TetrominoManager.checkCollision(
-                this.grid,
-                this.gridSize,
-                this.currentPiece.shape,
-                this.currentPiece.position.x, 
-                this.currentPiece.position.y
-            )) {
-                this.gameOver();
-                return;
-            }
-        } else {
-            // Première utilisation de la réserve
-            this.holdPiece = {
-                shape: JSON.parse(JSON.stringify(this.currentPiece.shape)),
-                color: this.currentPiece.color
-            };
-            this.spawnPiece();
-        }
-
-        this.canHold = false;
-        this.updateHoldPieceDisplay();
-        this.updateGhostPiece();
-        this.renderGrid();
-    } */
-
-        holdPieceAction() {
+    holdPieceAction() {
         if (!this.canHold || !this.currentPiece) return;
 
         if (this.holdPiece) {
@@ -572,7 +548,6 @@ class Tetris {
         this.ghostPosition = { ...this.currentPiece.position };
 
         // Faire tomber le fantôme jusqu'à la position la plus basse possible
-        //while (!TetrominoManager.checkCollision(this.ghostPosition.x, this.ghostPosition.y + 1, this.currentPiece.shape)) {
         while (!TetrominoManager.checkCollision(
             this.grid,
             this.gridSize,
@@ -748,148 +723,6 @@ class Tetris {
         }
     }
 
-    /* updateNextPieceDisplay() {
-        const $nextPiece = $('#next-piece');
-        $nextPiece.empty();
-
-        if (!this.nextPiece) return;
-
-        // Centrer la pièce dans l'affichage de prévisualisation
-        const piece = this.nextPiece;
-        const size = piece.shape.length;
-        const offset = Math.floor((4 - size) / 2);
-
-        for (let r = 0; r < 4; r++) {
-            for (let c = 0; c < 4; c++) {
-                const $cell = $('<div class="cell"></div>');
-
-                const pieceR = r - offset;
-                const pieceC = c - offset;
-
-                if (pieceR >= 0 && pieceR < size && pieceC >= 0 && pieceC < size && 
-                    piece.shape[pieceR][pieceC]) {
-                    $cell.addClass('filled ' + piece.color);
-                }
-
-                $nextPiece.append($cell);
-            }
-        }
-    }
-
-    updateHoldPieceDisplay() {
-        const $holdPiece = $('#hold-piece');
-        $holdPiece.empty();
-
-        if (!this.holdPiece) {
-            // Afficher une grille vide
-            for (let r = 0; r < 4; r++) {
-                for (let c = 0; c < 4; c++) {
-                    const $cell = $('<div class="cell"></div>');
-                    $holdPiece.append($cell);
-                }
-            }
-            return;
-        }
-
-        const piece = this.holdPiece;
-        const size = piece.shape.length;
-        const offset = Math.floor((4 - size) / 2);
-
-        for (let r = 0; r < 4; r++) {
-            for (let c = 0; c < 4; c++) {
-                const $cell = $('<div class="cell"></div>');
-
-                const pieceR = r - offset;
-                const pieceC = c - offset;
-
-                if (pieceR >= 0 && pieceR < size && pieceC >= 0 && pieceC < size && 
-                    piece.shape[pieceR][pieceC]) {
-                    $cell.addClass('filled ' + piece.color);
-                }
-
-                $holdPiece.append($cell);
-            }
-        }
-    } */
-
-    /* renderPreview(piece, container) {
-        if (!container) return;
-        container.empty();
-
-        if (!piece) {
-            // Grille vide 4x4 grise (quand hold est vide)
-            for (let i = 0; i < 16; i++) {
-                container.append('<div class="cell"></div>');
-            }
-            return;
-        }
-
-        // Détection auto du type pour un affichage optimal
-        const isIO = piece.color === 'I' || piece.color === 'O';
-        const gridSize = isIO ? 2 : 4;
-        const cellCount = gridSize * gridSize;
-
-        // On applique la classe CSS intelligente
-        container.removeClass('default large').addClass(isIO ? 'large' : 'default');
-
-        // Normalisation de la shape → toujours 4x4 sauf O
-        let shape = piece.shape;
-        if (piece.color !== 'O') {
-            // Force 4x4
-            while (shape.length < 4) shape.push([0,0,0,0]);
-            shape = shape.map(row => {
-                while (row.length < 4) row.push(0);
-                return row.slice(0, 4);
-            });
-        }
-
-        // Création des cellules
-        for (let i = 0; i < cellCount; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'cell';
-
-            const r = Math.floor(i / gridSize);
-            const c = i % gridSize;
-
-            if (shape[r] && shape[r][c]) {
-                cell.classList.add('filled', piece.color);
-            }
-
-            container[0].appendChild(cell);
-        }
-    } */
-
-    /* renderPreview(piece, container) {
-        if (!container) return;
-        container.empty();
-
-        // Grille vide quand rien
-        if (!piece) {
-            for (let i = 0; i < 16; i++) {
-                container.append('<div class="cell"></div>');
-            }
-            return;
-        }
-
-        const canonical = Tetris.PREVIEW_SHAPES[piece.color];
-        const isIO = piece.color === 'I' || piece.color === 'O';
-        const gridSize = isIO ? 2 : 4;
-
-        container.removeClass('default large').addClass(isIO ? 'large' : 'default');
-
-        for (let r = 0; r < gridSize; r++) {
-            for (let c = 0; c < gridSize; c++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-
-                if (canonical[r] && canonical[r][c] === 1) {
-                    cell.classList.add('filled', piece.color);
-                }
-                container[0].appendChild(cell);
-            }
-        }
-    } */
-
     renderPreview(piece, container) {
         if (!container) return;
         container.empty();
@@ -904,11 +737,12 @@ class Tetris {
         const canonical = Tetris.PREVIEW_SHAPES[piece.color];
 
         // I et O = affichage spécial, mais I = 4x4 (pas 2x2 !)
-        const isO = piece.color === 'O';
-        const isI = piece.color === 'I';
-        const gridSize = isO ? 2 : 4;  // I passe en 4x4, pas en 2x2
+        //const isO = piece.color === 'O';
+        //const isI = piece.color === 'I';
+        //const gridSize = isO ? 2 : 4;  // I passe en 4x4, pas en 2x2
+        const gridSize = 4;
 
-        container.removeClass('default large').addClass(isO ? 'large' : 'default');
+        //container.removeClass('default large').addClass(isO ? 'large' : 'default');
 
         for (let r = 0; r < gridSize; r++) {
             for (let c = 0; c < gridSize; c++) {
@@ -1057,6 +891,171 @@ class Tetris {
             date: new Date().toISOString()
         };
 
+        if (this.gameMode === 'sprint' || this.gameMode === 'survival') {
+            scoreEntry.time = this.elapsedTime;
+        }
+
+        // AJOUT / REMPLACEMENT INTELLIGENT (max 5)
+        const existingIndex = highScores[gameMode].findIndex(entry => entry.date === scoreEntry.date);
+        if (existingIndex > -1) {
+            highScores[gameMode][existingIndex] = scoreEntry;
+        } else {
+            highScores[gameMode].push(scoreEntry);
+        }
+
+        // TRI + LIMITATION À 5
+        if (this.gameMode === 'sprint') {
+            highScores[gameMode].sort((a, b) => a.time - b.time);
+        } else {
+            highScores[gameMode].sort((a, b) => b.score - a.score);
+        }
+        highScores[gameMode] = highScores[gameMode].slice(0, 5);
+
+        localStorage.setItem('tetrisHighScores', JSON.stringify(highScores));
+        
+        // ANIMATION NEW RECORD si top 5
+        /* if (highScores[gameMode].indexOf(scoreEntry) < 3) { // top 3 = animation spéciale
+            this.triggerNewRecordAnimation(gameMode, highScores[gameMode].indexOf(scoreEntry) + 1);
+        } */
+       const newRank = highScores[gameMode].findIndex(entry => 
+            entry.date === scoreEntry.date
+        ) + 1;
+
+        if (newRank <= 5) { // top 5 = animation
+            this.triggerNewRecordAnimation(gameMode, newRank);
+}
+        
+        this.displayHighScores(highScores);
+    }
+
+    loadHighScores() {
+        try {
+            const saved = localStorage.getItem('tetrisHighScores');
+            return saved ? JSON.parse(saved) : {};
+        } catch (e) {
+            console.error('Erreur chargement scores:', e);
+            return {};
+        }
+    }
+
+    // NOUVELLE FONCTION : Animation NEW RECORD !
+    triggerNewRecordAnimation(mode, rank) {
+        const $container = $('#high-scores');
+        const $modeSection = $container.find(`.mode-section h4:contains(${mode.toUpperCase()})`).parent();
+
+        // Flash global du panneau high-scores
+        $container.addClass('new-record-flash');
+        setTimeout(() => $container.removeClass('new-record-flash'), 2500);
+
+        // On attend que le DOM soit mis à jour
+        setTimeout(() => {
+            const $items = $modeSection.find('.score-item');
+            const $newItem = $items.eq(rank - 1); 
+
+            // Animation du nouvel entrant
+            $newItem.addClass('new-record');
+
+            // Si c’est le #1 → explosion magenta
+            if (rank === 1) {
+                $newItem.find('.rank').addClass('new-1st');
+                $newItem.find('.score-value').css('color', '#ff00ff');
+                
+                // Petit texte "NEW RECORD!" qui apparaît
+                const $banner = $('<div class="new-record-banner">NEW RECORD!</div>');
+                $('body').append($banner);
+                setTimeout(() => $banner.addClass('show'), 100);
+                setTimeout(() => {
+                    $banner.removeClass('show');
+                    setTimeout(() => $banner.remove(), 1000);
+                }, 3000);
+            }
+        }, 100);
+    }
+    /* triggerNewRecordAnimation(mode, rank) {
+        const $list = $('#high-scores');
+        
+        // Petit flash global
+        $list.addClass('new-record-flash');
+        setTimeout(() => $list.removeClass('new-record-flash'), 2000);
+        
+        // Marquer le score comme "new-record"
+        setTimeout(() => {
+            $list.find('.score-item').eq(rank - 1).addClass('new-record');
+            if (rank === 1) {
+                $list.find('.score-item .rank').eq(0).addClass('new-1st');
+            }
+        }, 500);
+    } */
+
+    displayHighScores(highScores) {
+        const $highScores = $('#high-scores');
+        $highScores.empty();
+
+        const modes = ['marathon', 'sprint', 'survival'];
+
+        modes.forEach(mode => {
+            const scores = highScores[mode] || [];
+            
+            // PAD À 5 avec 00000
+            const displayScores = scores.slice(0, 5);
+            while (displayScores.length < 5) {
+                displayScores.push({
+                    score: 0,
+                    lines: 0,
+                    time: 0,
+                    level: 1
+                });
+            }
+
+            const $modeSection = $(`<div class="mode-section"></div>`);
+            $modeSection.append(`<h4>${mode.toUpperCase()}</h4>`);
+
+            displayScores.forEach((score, index) => {
+                const $scoreItem = $('<div class="score-item"></div>');
+                const globalRank = index + 1;
+
+                if (mode === 'sprint' && score.time) {
+                    $scoreItem.html(`
+                        <span class="rank">#${globalRank}</span>
+                        <span class="score-value">${this.formatTime(score.time)}</span>
+                        <span class="score-lines">${score.score.toString().padStart(5,'0')}pts</span>
+                    `);
+                } else if (mode === 'survival' && score.time) {
+                    $scoreItem.html(`
+                        <span class="rank">#${globalRank}</span>
+                        <span class="score-value">${score.score.toString().padStart(6,'0')}</span>
+                        <span class="score-lines">${this.formatTime(score.time)}</span>
+                    `);
+                } else {
+                    $scoreItem.html(`
+                        <span class="rank">#${globalRank}</span>
+                        <span class="score-value">${score.score.toString().padStart(6,'0')}</span>
+                        <span class="score-lines">L${score.lines.toString().padStart(3,'0')}</span>
+                    `);
+                }
+                
+                $modeSection.append($scoreItem);
+            });
+            
+            $highScores.append($modeSection);
+        });
+    }
+
+    /* saveHighScore() {
+        const highScores = this.loadHighScores();
+        const gameMode = this.gameMode;
+
+        if (!highScores[gameMode]) {
+            highScores[gameMode] = [];
+        }
+
+        const scoreEntry = {
+            score: this.score,
+            lines: this.lines,
+            level: this.level,
+            date: new Date().toISOString()
+        };
+
         // Ajouter le temps pour Sprint et Survie
         if (this.gameMode === 'sprint' || this.gameMode === 'survival') {
             scoreEntry.time = this.elapsedTime;
@@ -1135,7 +1134,7 @@ class Tetris {
             
             $highScores.append($modeSection);
         });
-    }
+    } */
 }
 
 // Initialisation du jeu quand la page est chargée

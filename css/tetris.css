@@ -117,6 +117,8 @@ body {
     padding-bottom: 5px;
 }
 
+/** ================== High-scores dans le thème ================== **/
+
 /* High-scores prend l’espace restant */
 .high-scores {
     flex-grow: 1;
@@ -128,6 +130,138 @@ body {
     flex-grow: 1;
     margin-top: 15px;
     overflow-y: auto;
+    padding-right: 10px;
+}
+
+.mode-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.mode-section h4 {
+    color: #00ffff;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+    text-align: center;
+    text-shadow: 0 0 10px #00ffff;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    position: relative;
+}
+
+.mode-section h4::after {
+    content: "";
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #00ffff, transparent);
+    border-radius: 1px;
+}
+
+.score-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    background: rgba(0, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(0, 255, 255, 0.1);
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.score-item::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.score-item:hover {
+    background: rgba(0, 255, 255, 0.1);
+    border-color: #00ffff;
+    transform: translateX(5px);
+    box-shadow: 0 0 20px rgba(0,255,255,0.3);
+}
+
+.score-item:hover::before {
+    left: 100%;
+}
+
+.score-item.new-record {
+    animation: newRecordPulse 2s ease-in-out infinite;
+    border-color: #ff00ff !important;
+    box-shadow: 0 0 30px rgba(255, 0, 255, 0.6), inset 0 0 20px rgba(255, 0, 255, 0.1);
+    background: linear-gradient(45deg, rgba(255,0,255,0.15), rgba(0,255,255,0.15));
+}
+
+@keyframes newRecordPulse {
+    0%, 100% {
+        box-shadow: 0 0 30px rgba(255, 0, 255, 0.6), inset 0 0 20px rgba(255, 0, 255, 0.1);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 60px rgba(255, 0, 255, 0.6), inset 0 0 20px rgba(255, 0, 255, 0.1);
+        transform: scale(1.02);
+    }
+}
+
+.score-item .rank {
+    color: #00ffff;
+    font-weight: 900;
+    font-size: 1.1rem;
+    min-width: 35px;
+    text-shadow: 0 0 8px #00ffff;
+}
+
+.score-item .rank.new-1st {
+    color: #ff00ff !important;
+    text-shadow: 0 0 15px #ff00ff, 0 0 25px #ff00ff;
+    animation: rankGlow 1.5s ease-in-out infinite alternate;
+}
+
+.score-item .score-value {
+    flex: 1;
+    text-align: center;
+    font-weight: 700;
+    font-family: 'Geo', monospace;
+    text-shadow: 0 0 5px currentColor;
+}
+
+.score-item .score-lines {
+    color: #00ff00;
+    min-width: 60px;
+    text-align: right;
+    font-weight: 600;
+}
+
+.no-scores {
+    text-align: center;
+    color: rgba(255,255,255,0.3);
+    font-style: italic;
+    padding: 30px 20px;
+    font-size: 1rem;
+}
+
+@keyframes rankGlow {
+    from { text-shadow: 0 0 15px #ff00ff, 0 0 25px #ff00ff; }
+    to { text-shadow: 0 0 25px #ff00ff, 0 0 40px #ff00ff, 0 0 60px #ff00ff; }
 }
 
 .piece-preview {
@@ -144,8 +278,18 @@ body {
     margin: 0 auto;
 }
 
-.piece-preview.default { grid-template-columns: repeat(4,1fr); grid-template-rows: repeat(4,1fr); gap: 4px; }
-.piece-preview.large   { grid-template-columns: repeat(2,1fr); grid-template-rows: repeat(2,1fr); gap: 10px; }
+#high-scores.new-record-flash {
+    animation: globalFlash 0.5s ease-in-out 4;
+}
+
+@keyframes globalFlash {
+    0%, 100% { box-shadow: 0 0 20px rgba(0,255,255,0.5); }
+    50% { box-shadow: 0 0 50px rgba(255,0,255,0.8), 0 0 80px rgba(0,255,255,0.6); }
+}
+
+/* .piece-preview.default { grid-template-columns: repeat(4,1fr); grid-template-rows: repeat(4,1fr); gap: 4px; } */
+/* .piece-preview.large   { grid-template-columns: repeat(2,1fr); grid-template-rows: repeat(2,1fr); gap: 10px; } */
+/* .piece-preview.large   { grid-template-columns: repeat(4,1fr); grid-template-rows: repeat(4,1fr); gap: 4px; } */
 .piece-preview .cell { width: 100% !important; height: 100% !important; border-radius: 6px; }
 
 /* Grille centrale */
@@ -382,11 +526,11 @@ kbd:hover {
 }
 
 /* 2×2 gros et centré (I et O seulement) */
-.piece-preview.large {
+/* .piece-preview.large {
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(2, 1fr);
     gap: 10px;
-}
+} */
 
 .piece-preview .cell {
     width: 100% !important;
@@ -416,4 +560,30 @@ kbd:hover {
 /* Bonus : un peu plus d'espace pour la barre verticale */
 .piece-preview.full-i .cell.filled.I {
     border-radius: 8px;
+}
+
+/* BANNER NEW RECORD ÉPIQUE */
+.new-record-banner {
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 5rem;
+    font-weight: 900;
+    color: #00ff95;
+    text-shadow: 
+        0 0 20px #ff00ff,
+        0 0 40px #ff00ff,
+        0 0 80px #ff00ff,
+        0 0 120px #ff00ff;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.new-record-banner.show {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
 }
