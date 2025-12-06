@@ -121,7 +121,6 @@ body {
 
 /* High-scores prend l’espace restant */
 .high-scores {
-    height: 200px;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
@@ -288,6 +287,9 @@ body {
     50% { box-shadow: 0 0 50px rgba(255,0,255,0.8), 0 0 80px rgba(0,255,255,0.6); }
 }
 
+/* .piece-preview.default { grid-template-columns: repeat(4,1fr); grid-template-rows: repeat(4,1fr); gap: 4px; } */
+/* .piece-preview.large   { grid-template-columns: repeat(2,1fr); grid-template-rows: repeat(2,1fr); gap: 10px; } */
+/* .piece-preview.large   { grid-template-columns: repeat(4,1fr); grid-template-rows: repeat(4,1fr); gap: 4px; } */
 .piece-preview .cell { width: 100% !important; height: 100% !important; border-radius: 6px; }
 
 /* Grille centrale */
@@ -460,6 +462,7 @@ kbd:hover {
     font-family: 'Orbitron', sans-serif;
 }
 
+/* ... le reste des overlays reste identique, je te les garde propres ... */
 .mode-descriptions,
 .audio-settings,
 .final-stats { margin-bottom: 30px; }
@@ -521,6 +524,13 @@ kbd:hover {
     grid-template-rows: repeat(4, 1fr);
     gap: 4px;
 }
+
+/* 2×2 gros et centré (I et O seulement) */
+/* .piece-preview.large {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 10px;
+} */
 
 .piece-preview .cell {
     width: 100% !important;

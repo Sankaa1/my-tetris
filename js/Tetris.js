@@ -85,6 +85,8 @@ class Tetris {
         this.bindEvents();
         this.updateDisplay();
         this.loadHighScores();
+        this.loadHighScores();
+        this.displayHighScores(this.loadHighScores());
 
         // S'assurer que l'overlay de démarrage est visible
         $('#start-overlay').addClass('active');
@@ -298,7 +300,6 @@ class Tetris {
         const newX = this.currentPiece.position.x + dx;
         const newY = this.currentPiece.position.y + dy;
 
-        //if (!TetrominoManager.checkCollision(newX, newY, this.currentPiece.shape)) {
         if (!TetrominoManager.checkCollision(this.grid, this.gridSize, this.currentPiece.shape, newX, newY)) {
             this.currentPiece.position.x = newX;
             this.currentPiece.position.y = newY;
@@ -971,21 +972,6 @@ class Tetris {
             }
         }, 100);
     }
-    /* triggerNewRecordAnimation(mode, rank) {
-        const $list = $('#high-scores');
-        
-        // Petit flash global
-        $list.addClass('new-record-flash');
-        setTimeout(() => $list.removeClass('new-record-flash'), 2000);
-        
-        // Marquer le score comme "new-record"
-        setTimeout(() => {
-            $list.find('.score-item').eq(rank - 1).addClass('new-record');
-            if (rank === 1) {
-                $list.find('.score-item .rank').eq(0).addClass('new-1st');
-            }
-        }, 500);
-    } */
 
     displayHighScores(highScores) {
         const $highScores = $('#high-scores');
@@ -1040,101 +1026,6 @@ class Tetris {
             $highScores.append($modeSection);
         });
     }
-
-    /* saveHighScore() {
-        const highScores = this.loadHighScores();
-        const gameMode = this.gameMode;
-
-        if (!highScores[gameMode]) {
-            highScores[gameMode] = [];
-        }
-
-        const scoreEntry = {
-            score: this.score,
-            lines: this.lines,
-            level: this.level,
-            date: new Date().toISOString()
-        };
-
-        // Ajouter le temps pour Sprint et Survie
-        if (this.gameMode === 'sprint' || this.gameMode === 'survival') {
-            scoreEntry.time = this.elapsedTime;
-        }
-
-        highScores[gameMode].push(scoreEntry);
-
-        // Trier selon le mode
-        if (this.gameMode === 'sprint') {
-            // En Sprint, le meilleur temps gagne
-            highScores[gameMode].sort((a, b) => a.time - b.time);    
-        } else {
-            // En Marathon et Survie, le meilleur score gagne
-            highScores[gameMode].sort((a, b) => b.score - a.score);
-        }
-
-        highScores[gameMode] = highScores[gameMode].slice(0, 10);
-
-        localStorage.setItem('tetrisHighScores', JSON.stringify(highScores));
-        this.displayHighScores(highScores);
-    }
-
-    loadHighScores() {
-        try {
-            const saved = localStorage.getItem('tetrisHighScores');
-            const highScores = saved ? JSON.parse(saved) : {};
-            this.displayHighScores(highScores);
-            return highScores;
-        } catch (e) {
-            console.error('Erreur lors du chargement des scores:', e);
-            return {};
-        }
-    }
-
-    displayHighScores(highScores) {
-        const $highScores = $('#high-scores');
-        $highScores.empty();
-
-        if (Object.keys(highScores).length === 0) {
-            $highScores.html('<p class="no-scores">Aucun score enregistré</p>');
-            return;
-        }
-
-        Object.keys(highScores).forEach(mode => {
-            const $modeSection = $(`<div class="mode-section"></div>`);
-            $modeSection.append(`<h4>${mode.toUpperCase()}</h4>`);
-
-            highScores[mode].forEach((score, index) => {
-                const $scoreItem = $('<div class="score-item"></div>');
-
-                if (mode === 'sprint' && score.time !== undefined) {
-                    // Pour Sprint, afficher le temps
-                    $scoreItem.html(`
-                        <span class="rank">#${index + 1}</span>
-                        <span class="score-value">${this.formatTime(score.time)}</span>
-                        <span class="score-lines">${score.score}pts</span>
-                    `);
-                } else if (mode === 'survival' && score.time !== undefined) {
-                    // Pour Survie, afficher score et temps
-                    $scoreItem.html(`
-                        <span class="rank">#${index + 1}</span>
-                        <span class="score-value">${score.score}</span>
-                        <span class="score-lines">${this.formatTime(score.time)}</span>
-                    `);
-                } else {
-                    // Pour Marathon, afficher score et lignes
-                    $scoreItem.html(`
-                        <span class="rank">#${index + 1}</span>
-                        <span class="score-value">${score.score}</span>
-                        <span class="score-lines">L${score.lines}</span>
-                    `);
-                }
-                
-                $modeSection.append($scoreItem);
-            });
-            
-            $highScores.append($modeSection);
-        });
-    } */
 }
 
 // Initialisation du jeu quand la page est chargée
