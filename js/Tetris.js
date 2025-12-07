@@ -1,4 +1,48 @@
 class Tetris {
+    static PREVIEW_SHAPES = {
+        I:  [               // toujours horizontale  
+                [0,0,0,0], 
+                [1,1,1,1], 
+                [0,0,0,0], 
+                [0,0,0,0]
+            ],
+        O:  [               // toujours carré
+                [0,0,0,0],
+                [0,1,1,0],     
+                [0,1,1,0],     
+                [0,0,0,0]
+            ],
+        T:  [               // pointe en haut   
+                [0,0,0,0],
+                [0,1,0,0],   
+                [1,1,1,0],  
+                [0,0,0,0]
+            ],
+        S:  [               // On se démerde...   
+                [0,0,0,0],
+                [0,0,1,1],   
+                [0,1,1,0],   
+                [0,0,0,0]
+            ],
+        Z:  [    
+                [0,0,0,0],
+                [1,1,0,0],   
+                [0,1,1,0],   
+                [0,0,0,0]
+            ],
+        J:  [    
+                [0,0,0,0],
+                [1,0,0,0],
+                [1,1,1,0],   
+                [0,0,0,0]
+            ],
+        L:  [    
+                [0,0,0,0],
+                [0,0,0,1],   
+                [0,1,1,1],   
+                [0,0,0,0]
+            ]
+    };
     constructor(options = {}) {
         this.grid = null;
         this.currentPiece = null;
@@ -41,6 +85,8 @@ class Tetris {
         this.bindEvents();
         this.updateDisplay();
         this.loadHighScores();
+        this.loadHighScores();
+        this.displayHighScores(this.loadHighScores());
 
         // S'assurer que l'overlay de démarrage est visible
         $('#start-overlay').addClass('active');
@@ -80,8 +126,9 @@ class Tetris {
     }
 
     bindEvents() {
-        // Contrôles clavier
-        $(document).on('keydown', (e) => ControlsManager.handleKeyPress(this, e));
+        // Contrôles clavier (keydown + keyup pour DAS/ARR)
+        $(document).on('keydown', (e) => ControlsManager.handleKeyDown(this, e));
+        $(document).on('keyup', (e) => ControlsManager.handleKeyUp(this, e));
 
         // Boutons de contrôle
         $('#start-btn').on('click', () => {
@@ -134,7 +181,8 @@ class Tetris {
                 sprint: "Complétez 40 lignes le plus rapidement possible !",
                 survival: "La vitesse augmente toutes les 30 secondes. Tenez bon !"
             };
-            $('.mode-text').text(descriptions[newMode]);
+            //$('.mode-text').text(descriptions[newMode]);
+            $(document).on('click', '.mode-btn', handleModeClick);
 
             // Met à jour l’UI (label LIGNES/RESTANTES + timer + compteur de lignes)
             this.updateModeDisplay();
@@ -175,7 +223,8 @@ class Tetris {
 
         if (this.sound) {
             this.sound.stopMusic?.();
-            this.sound.playGameMusic?.('playlist');
+            console.log('[Tetris.startGame] Mode musique:', this.sound.musicMode);
+            this.sound.playGameMusic?.(this.sound.musicMode);
         }
 
         this.startGameLoop();
@@ -252,7 +301,6 @@ class Tetris {
         const newX = this.currentPiece.position.x + dx;
         const newY = this.currentPiece.position.y + dy;
 
-        //if (!TetrominoManager.checkCollision(newX, newY, this.currentPiece.shape)) {
         if (!TetrominoManager.checkCollision(this.grid, this.gridSize, this.currentPiece.shape, newX, newY)) {
             this.currentPiece.position.x = newX;
             this.currentPiece.position.y = newY;
@@ -424,13 +472,10 @@ class Tetris {
         this.score += linePoints;
         this.updateDisplay();
     }
-        updateLevel() {
-            GameModeManager.updateLevelAndSpeed(this);
-        }
-
-        updateFallSpeed() {
-            GameModeManager.updateLevelAndSpeed(this);
-        }
+        
+    updateLevel() {
+        GameModeManager.updateLevelAndSpeed(this);
+    }
 
     hardDrop() {
         if (!this.currentPiece || this.gameState !== 'playing') return;
@@ -454,42 +499,43 @@ class Tetris {
         if (!this.canHold || !this.currentPiece) return;
 
         if (this.holdPiece) {
-            
-            // Echange avec la pièce en réserve
-            const temp = {
-                shape: JSON.parse(JSON.stringify(this.currentPiece.shape)),
-                color: this.currentPiece.color
+            // ÉCHANGE INTELLIGENT : on garde la rotation exacte des deux pièces
+            const tempShape = JSON.parse(JSON.stringify(this.currentPiece.shape));
+            const tempColor = this.currentPiece.color;
+
+            // On remet la pièce tenue avec sa rotation sauvegardée
+            this.currentPiece.shape = JSON.parse(JSON.stringify(this.holdPiece.shape));
+            this.currentPiece.color = this.holdPiece.color;
+
+            // On sauvegarde l'ancienne pièce courante (avec sa rotation actuelle)
+            this.holdPiece = {
+                shape: tempShape,
+                color: tempColor
             };
 
-            const newShape = JSON.parse(JSON.stringify(this.holdPiece.shape));
-            const topOffset = TetrominoManager.getTopOffset(newShape);
+            // Repositionnement au spawn (avec offset propre)
+            const topOffset = TetrominoManager.getTopOffset(this.currentPiece.shape);
+            this.currentPiece.position = { x: 3, y: -topOffset };
 
-            this.currentPiece = {
-                shape: newShape,
-                color: this.holdPiece.color,
-                position: { x: 3, y: -topOffset }
-            };
-
-            this.holdPiece = temp;
-
-            // Vérifier si la nouvelle pièce peut être placée
+            // Vérif collision immédiate → game over si bloqué
             if (TetrominoManager.checkCollision(
                 this.grid,
                 this.gridSize,
                 this.currentPiece.shape,
-                this.currentPiece.position.x, 
+                this.currentPiece.position.x,
                 this.currentPiece.position.y
             )) {
                 this.gameOver();
                 return;
             }
+
         } else {
-            // Première utilisation de la réserve
+            // Premier hold : on sauvegarde la pièce courante telle quelle
             this.holdPiece = {
                 shape: JSON.parse(JSON.stringify(this.currentPiece.shape)),
                 color: this.currentPiece.color
             };
-            this.spawnPiece();
+            this.spawnPiece(); // spawn la next
         }
 
         this.canHold = false;
@@ -504,7 +550,6 @@ class Tetris {
         this.ghostPosition = { ...this.currentPiece.position };
 
         // Faire tomber le fantôme jusqu'à la position la plus basse possible
-        //while (!TetrominoManager.checkCollision(this.ghostPosition.x, this.ghostPosition.y + 1, this.currentPiece.shape)) {
         while (!TetrominoManager.checkCollision(
             this.grid,
             this.gridSize,
@@ -596,6 +641,8 @@ class Tetris {
             clearInterval(this.gameLoop);
             this.stopTimer();
             $('#pause-overlay').addClass('active');
+            // Resynchroniser l'UI audio avec l'état réel du SoundManager
+            this.syncAudioUI();
         } else if (this.gameState === 'paused') {
             this.gameState = 'playing';
             this.startGameLoop();
@@ -604,6 +651,36 @@ class Tetris {
             }
             $('#pause-overlay').removeClass('active');
         }
+    }
+
+    syncAudioUI() {
+        console.log('[SyncAudioUI] Synchronisation UI audio avec état SoundManager');
+        console.log('[SyncAudioUI] Music enabled:', this.sound.musicEnabled, 'FX enabled:', this.sound.fxEnabled);
+        
+        // Synchroniser les toggles généraux
+        $('.music-toggle').prop('checked', this.sound.musicEnabled);
+        $('.fx-toggle').prop('checked', this.sound.fxEnabled);
+        
+        // Synchroniser les sliders de volume
+        $('.music-volume').val(this.sound.musicVolume * 100);
+        $('.fx-volume').val(this.sound.sfxVolume * 100);
+        
+        // Synchroniser la sélection de musique
+        $('.music-btn').removeClass('active');
+        $(`.music-btn[data-music="${this.sound.selectedGameMusic}"]`).addClass('active');
+        console.log('[SyncAudioUI] Musique sélectionnée:', this.sound.selectedGameMusic);
+        
+        // Synchroniser le mode playlist
+        const isPlaylistMode = this.sound.musicMode === 'playlist';
+        $('.playlist-toggle').prop('checked', isPlaylistMode);
+        console.log('[SyncAudioUI] Mode playlist:', isPlaylistMode);
+        
+        // Synchroniser les effets spécifiques
+        const fxConfig = this.sound.getFxConfig();
+        Object.keys(fxConfig).forEach(fxName => {
+            $(`.fx-check[data-fx="${fxName}"]`).prop('checked', fxConfig[fxName]);
+            console.log('[SyncAudioUI] FX', fxName + ':', fxConfig[fxName]);
+        });
     }
 
     resetGame() {
@@ -680,68 +757,47 @@ class Tetris {
         }
     }
 
-    updateNextPieceDisplay() {
-        const $nextPiece = $('#next-piece');
-        $nextPiece.empty();
+    renderPreview(piece, container) {
+        if (!container) return;
+        container.empty();
 
-        if (!this.nextPiece) return;
-
-        // Centrer la pièce dans l'affichage de prévisualisation
-        const piece = this.nextPiece;
-        const size = piece.shape.length;
-        const offset = Math.floor((4 - size) / 2);
-
-        for (let r = 0; r < 4; r++) {
-            for (let c = 0; c < 4; c++) {
-                const $cell = $('<div class="cell"></div>');
-
-                const pieceR = r - offset;
-                const pieceC = c - offset;
-
-                if (pieceR >= 0 && pieceR < size && pieceC >= 0 && pieceC < size && 
-                    piece.shape[pieceR][pieceC]) {
-                    $cell.addClass('filled ' + piece.color);
-                }
-
-                $nextPiece.append($cell);
-            }
-        }
-    }
-
-    updateHoldPieceDisplay() {
-        const $holdPiece = $('#hold-piece');
-        $holdPiece.empty();
-
-        if (!this.holdPiece) {
-            // Afficher une grille vide
-            for (let r = 0; r < 4; r++) {
-                for (let c = 0; c < 4; c++) {
-                    const $cell = $('<div class="cell"></div>');
-                    $holdPiece.append($cell);
-                }
+        if (!piece) {
+            for (let i = 0; i < 16; i++) {
+                container.append('<div class="cell"></div>');
             }
             return;
         }
 
-        const piece = this.holdPiece;
-        const size = piece.shape.length;
-        const offset = Math.floor((4 - size) / 2);
+        const canonical = Tetris.PREVIEW_SHAPES[piece.color];
 
-        for (let r = 0; r < 4; r++) {
-            for (let c = 0; c < 4; c++) {
-                const $cell = $('<div class="cell"></div>');
+        // I et O = affichage spécial, mais I = 4x4 (pas 2x2 !)
+        //const isO = piece.color === 'O';
+        //const isI = piece.color === 'I';
+        //const gridSize = isO ? 2 : 4;  // I passe en 4x4, pas en 2x2
+        const gridSize = 4;
 
-                const pieceR = r - offset;
-                const pieceC = c - offset;
+        //container.removeClass('default large').addClass(isO ? 'large' : 'default');
 
-                if (pieceR >= 0 && pieceR < size && pieceC >= 0 && pieceC < size && 
-                    piece.shape[pieceR][pieceC]) {
-                    $cell.addClass('filled ' + piece.color);
+        for (let r = 0; r < gridSize; r++) {
+            for (let c = 0; c < gridSize; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+
+                if (canonical[r] && canonical[r][c] === 1) {
+                    cell.classList.add('filled', piece.color);
                 }
-
-                $holdPiece.append($cell);
+                container[0].appendChild(cell);
             }
         }
+    }
+
+    // Remplacement des anciennes fonctions
+    updateNextPieceDisplay() {
+        this.renderPreview(this.nextPiece, $('#next-piece'));
+    }
+
+    updateHoldPieceDisplay() {
+        this.renderPreview(this.holdPiece, $('#hold-piece'));
     }
 
     updateDisplay() {
@@ -869,76 +925,131 @@ class Tetris {
             date: new Date().toISOString()
         };
 
-        // Ajouter le temps pour Sprint et Survie
         if (this.gameMode === 'sprint' || this.gameMode === 'survival') {
             scoreEntry.time = this.elapsedTime;
         }
 
-        highScores[gameMode].push(scoreEntry);
-
-        // Trier selon le mode
-        if (this.gameMode === 'sprint') {
-            // En Sprint, le meilleur temps gagne
-            highScores[gameMode].sort((a, b) => a.time - b.time);    
+        // AJOUT / REMPLACEMENT INTELLIGENT (max 5)
+        const existingIndex = highScores[gameMode].findIndex(entry => entry.date === scoreEntry.date);
+        if (existingIndex > -1) {
+            highScores[gameMode][existingIndex] = scoreEntry;
         } else {
-            // En Marathon et Survie, le meilleur score gagne
-            highScores[gameMode].sort((a, b) => b.score - a.score);
+            highScores[gameMode].push(scoreEntry);
         }
 
-        highScores[gameMode] = highScores[gameMode].slice(0, 10);
+        // TRI + LIMITATION À 5
+        if (this.gameMode === 'sprint') {
+            highScores[gameMode].sort((a, b) => a.time - b.time);
+        } else {
+            highScores[gameMode].sort((a, b) => b.score - a.score);
+        }
+        highScores[gameMode] = highScores[gameMode].slice(0, 5);
 
         localStorage.setItem('tetrisHighScores', JSON.stringify(highScores));
+        
+        // ANIMATION NEW RECORD si top 5
+        /* if (highScores[gameMode].indexOf(scoreEntry) < 3) { // top 3 = animation spéciale
+            this.triggerNewRecordAnimation(gameMode, highScores[gameMode].indexOf(scoreEntry) + 1);
+        } */
+       const newRank = highScores[gameMode].findIndex(entry => 
+            entry.date === scoreEntry.date
+        ) + 1;
+
+        if (newRank <= 5) { // top 5 = animation
+            this.triggerNewRecordAnimation(gameMode, newRank);
+}
+        
         this.displayHighScores(highScores);
     }
 
     loadHighScores() {
         try {
             const saved = localStorage.getItem('tetrisHighScores');
-            const highScores = saved ? JSON.parse(saved) : {};
-            this.displayHighScores(highScores);
-            return highScores;
+            return saved ? JSON.parse(saved) : {};
         } catch (e) {
-            console.error('Erreur lors du chargement des scores:', e);
+            console.error('Erreur chargement scores:', e);
             return {};
         }
+    }
+
+    // NOUVELLE FONCTION : Animation NEW RECORD !
+    triggerNewRecordAnimation(mode, rank) {
+        const $container = $('#high-scores');
+        const $modeSection = $container.find(`.mode-section h4:contains(${mode.toUpperCase()})`).parent();
+
+        // Flash global du panneau high-scores
+        $container.addClass('new-record-flash');
+        setTimeout(() => $container.removeClass('new-record-flash'), 2500);
+
+        // On attend que le DOM soit mis à jour
+        setTimeout(() => {
+            const $items = $modeSection.find('.score-item');
+            const $newItem = $items.eq(rank - 1); 
+
+            // Animation du nouvel entrant
+            $newItem.addClass('new-record');
+
+            // Si c’est le #1 → explosion magenta
+            if (rank === 1) {
+                $newItem.find('.rank').addClass('new-1st');
+                $newItem.find('.score-value').css('color', '#ff00ff');
+                
+                // Petit texte "NEW RECORD!" qui apparaît
+                const $banner = $('<div class="new-record-banner">NEW RECORD!</div>');
+                $('body').append($banner);
+                setTimeout(() => $banner.addClass('show'), 100);
+                setTimeout(() => {
+                    $banner.removeClass('show');
+                    setTimeout(() => $banner.remove(), 1000);
+                }, 3000);
+            }
+        }, 100);
     }
 
     displayHighScores(highScores) {
         const $highScores = $('#high-scores');
         $highScores.empty();
 
-        if (Object.keys(highScores).length === 0) {
-            $highScores.html('<p class="no-scores">Aucun score enregistré</p>');
-            return;
-        }
+        const modes = ['marathon', 'sprint', 'survival'];
 
-        Object.keys(highScores).forEach(mode => {
+        modes.forEach(mode => {
+            const scores = highScores[mode] || [];
+            
+            // PAD À 5 avec 00000
+            const displayScores = scores.slice(0, 5);
+            while (displayScores.length < 5) {
+                displayScores.push({
+                    score: 0,
+                    lines: 0,
+                    time: 0,
+                    level: 1
+                });
+            }
+
             const $modeSection = $(`<div class="mode-section"></div>`);
             $modeSection.append(`<h4>${mode.toUpperCase()}</h4>`);
 
-            highScores[mode].forEach((score, index) => {
+            displayScores.forEach((score, index) => {
                 const $scoreItem = $('<div class="score-item"></div>');
+                const globalRank = index + 1;
 
-                if (mode === 'sprint' && score.time !== undefined) {
-                    // Pour Sprint, afficher le temps
+                if (mode === 'sprint' && score.time) {
                     $scoreItem.html(`
-                        <span class="rank">#${index + 1}</span>
+                        <span class="rank">#${globalRank}</span>
                         <span class="score-value">${this.formatTime(score.time)}</span>
-                        <span class="score-lines">${score.score}pts</span>
+                        <span class="score-lines">${score.score.toString().padStart(5,'0')}pts</span>
                     `);
-                } else if (mode === 'survival' && score.time !== undefined) {
-                    // Pour Survie, afficher score et temps
+                } else if (mode === 'survival' && score.time) {
                     $scoreItem.html(`
-                        <span class="rank">#${index + 1}</span>
-                        <span class="score-value">${score.score}</span>
+                        <span class="rank">#${globalRank}</span>
+                        <span class="score-value">${score.score.toString().padStart(6,'0')}</span>
                         <span class="score-lines">${this.formatTime(score.time)}</span>
                     `);
                 } else {
-                    // Pour Marathon, afficher score et lignes
                     $scoreItem.html(`
-                        <span class="rank">#${index + 1}</span>
-                        <span class="score-value">${score.score}</span>
-                        <span class="score-lines">L${score.lines}</span>
+                        <span class="rank">#${globalRank}</span>
+                        <span class="score-value">${score.score.toString().padStart(6,'0')}</span>
+                        <span class="score-lines">L${score.lines.toString().padStart(3,'0')}</span>
                     `);
                 }
                 
@@ -957,53 +1068,125 @@ $(document).ready(() => {
     
     window.tetris = new Tetris({ soundManager: sound });
 
-    // Toggles audio
-    $('.music-toggle').prop('checked', sound.musicEnabled);
-    $('.fx-toggle').prop('checked', sound.fxEnabled);
+    // Fonction pour initialiser les contrôles audio
+    function initAudioControls() {
+        console.log('[initAudioControls] Initialisation des contrôles audio');
+        
+        // Synchroniser l'UI avec l'état du SoundManager
+        syncAllAudioUI();
 
-    // Bascule on - off
-    $('.music-toggle').on('change', function () {
-        const checked = this.checked;
+        // === DÉLÉGATION D'ÉVÉNEMENTS POUR ÉVITER LES DOUBLONS ===
+        
+        // Sélection de musique (boutons)
+        $(document).on('click', '.music-btn', function() {
+            const trackName = $(this).data('music');
+            console.log('[initAudioControls] Clic bouton musique:', trackName);
+            sound.setGameMusic(trackName);
+            
+            // Si la musique est activée, relancer avec la nouvelle piste
+            if (sound.musicEnabled) {
+                console.log('[initAudioControls] Musique activée, relance avec nouvelle piste');
+                sound.playGameMusic(sound.musicMode);
+            }
+            
+            updateMusicButtonStates();
+        });
 
-        $('.music-toggle').prop('checked', checked);
+        // Mode playlist (toggle)
+        $(document).on('change', '.playlist-toggle', function() {
+            const mode = this.checked ? 'playlist' : 'single';
+            console.log('[initAudioControls] Mode playlist changé vers:', mode);
+            sound.musicMode = mode;
+            sound.saveSettings();
+            
+            // Si la musique est activée, relancer avec le nouveau mode
+            if (sound.musicEnabled && sound.currentMusic) {
+                console.log('[initAudioControls] Musique en cours, relance avec nouveau mode:', mode);
+                sound.playGameMusic(mode);
+            }
+        });
 
-        sound.toggleMusic(checked);
-    });
+        // Sélection d'effets individuels
+        $(document).on('change', '.fx-check', function() {
+            const fxName = $(this).data('fx');
+            const enabled = this.checked;
+            console.log('[initAudioControls] FX', fxName, 'changé vers:', enabled);
+            sound.toggleFxType(fxName, enabled);
+        });
+        
+        // Bascule on/off musique générale
+        $(document).on('change', '.music-toggle', function() {
+            const checked = this.checked;
+            console.log('[initAudioControls] Music toggle changé vers:', checked);
+            // Synchroniser TOUS les toggles de musique
+            $('.music-toggle').prop('checked', checked);
+            sound.toggleMusic(checked);
+        });
 
-    $('.fx-toggle').on('change', function() {
-        const checked = this.checked;
+        // Bascule on/off effets généraux
+        $(document).on('change', '.fx-toggle', function() {
+            const checked = this.checked;
+            console.log('[initAudioControls] FX toggle changé vers:', checked);
+            // Synchroniser TOUS les toggles d'effets
+            $('.fx-toggle').prop('checked', checked);
+            sound.toggleFx(checked);
+        });
 
-        $('.fx-toggle').prop('checked', checked);
-        sound.toggleFx(checked);
-    });
-
-    // Gestion volume des sons
-    $('.music-volume')
-        // valeur initiale dans tous les sliders
-        .val(sound.musicVolume * 100)
-        // synchronisation
-        .on('input', function () {
+        // Gestion volume musique
+        $(document).on('input', '.music-volume', function() {
             const value = this.value;
-
-            // Mettre tous les sliders "musique à cette valeur"
+            console.log('[initAudioControls] Volume musique:', value);
+            // Synchroniser tous les sliders de volume musique
             $('.music-volume').val(value);
-
-            // Mise à jour SoundManager
             sound.setMusicVolume(value / 100);
         });
 
-    // Effets
-    $('.fx-volume')
-        .val(sound.sfxVolume * 100)
-        .on('input', function () {
+        // Gestion volume effets
+        $(document).on('input', '.fx-volume', function() {
             const value = this.value;
-
+            console.log('[initAudioControls] Volume effets:', value);
+            // Synchroniser tous les sliders de volume effets
             $('.fx-volume').val(value);
             sound.setSfxVolume(value / 100);
         });
-        //console.log(sound.musicVolume);
-        //console.log(sound.sfxVolume);
-   
+    }
+
+    // Fonction pour synchroniser TOUS les éléments audio UI
+    function syncAllAudioUI() {
+        console.log('[syncAllAudioUI] Synchronisation complète UI');
+        
+        // Toggles généraux
+        $('.music-toggle').prop('checked', sound.musicEnabled);
+        $('.fx-toggle').prop('checked', sound.fxEnabled);
+
+        // Sliders de volume
+        $('.music-volume').val(sound.musicVolume * 100);
+        $('.fx-volume').val(sound.sfxVolume * 100);
+
+        // Sélection de musique
+        updateMusicButtonStates();
+
+        // Mode playlist
+        const isPlaylistMode = sound.musicMode === 'playlist';
+        $('.playlist-toggle').prop('checked', isPlaylistMode);
+
+        // Sélection d'effets individuels
+        const fxConfig = sound.getFxConfig();
+        Object.keys(fxConfig).forEach(fxName => {
+            $(`.fx-check[data-fx="${fxName}"]`).prop('checked', fxConfig[fxName]);
+        });
+    }
+
+    // Fonction pour mettre à jour l'état des boutons de musique
+    function updateMusicButtonStates() {
+        $('.music-btn').removeClass('active');
+        $(`.music-btn[data-music="${sound.selectedGameMusic}"]`).addClass('active');
+    }
+
+    // Initialiser les contrôles
+    initAudioControls();
+
+    // Préventions des raccourcis clavier
     document.addEventListener('keydown', function(e) {
         const codesToPrevent = ['Space', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown'];
         if (codesToPrevent.includes(e.code)) {

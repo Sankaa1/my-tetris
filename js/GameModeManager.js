@@ -75,6 +75,10 @@ class GameModeManager {
         if (cfg.targetLines) {
             tetris.targetLines = cfg.targetLines;
         }
+
+        // Réinitialiser le niveau et la vitesse de chute selon le mode
+        tetris.level = cfg.calcLevel(tetris);
+        tetris.fallSpeed = cfg.calcFallSpeed(tetris.level);
     }
 
     /**

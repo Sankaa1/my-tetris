@@ -58,7 +58,7 @@ class TetrominoManager {
             color: 'L'
         }
     };
-
+    
     static COLORS = {
         I: '#00ffff',
         O: '#ffff00',
@@ -69,11 +69,23 @@ class TetrominoManager {
         L: '#ffa500'
     };
 
-    static getRandomPiece() {
+    // Sac de pioche à 7 éléments pour garantir une distribution uniforme
+    static _bag = [];
+
+    static refillBag() {
         const keys = Object.keys(this.PIECES);
-        const key = keys[Math.floor(Math.random() * keys.length)];
+        // Mélange Fisher-Yates => https://fr.wikipedia.org/wiki/M%C3%A9lange_de_Fisher-Yates
+        for (let i = keys.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [keys[i], keys[j]] = [keys[j], keys[i]];
+        }
+        this._bag.push(...keys);
+    }
+
+    static getRandomPiece() {
+        if (this._bag.length === 0) this.refillBag();
+        const key = this._bag.shift();
         const def = this.PIECES[key];
-        
         return {
             shape: JSON.parse(JSON.stringify(def.shape)),
             color: def.color
@@ -119,4 +131,30 @@ class TetrominoManager {
         return false;
     }
 
+    renderPreview(piece, container) {
+        if (!container) return;
+        container.empty();
+
+        if (!piece) {
+            for (let i = 0; i < 16; i++) container.append('<div class="cell"></div>');
+            return;
+        }
+
+        const canonical = Tetris.PREVIEW_SHAPES[piece.color];
+        const isIO = piece.color === 'I' || piece.color === 'O';
+        const gridSize = isIO ? 2 : 4;
+
+        container.removeClass('default large').addClass(isIO ? 'large' : 'default');
+
+        for (let r = 0; r < gridSize; r++) {
+            for (let c = 0; c < gridSize; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                if (canonical[r] && canonical[r][c]) {
+                    cell.classList.add('filled', piece.color);
+                }
+                container[0].appendChild(cell);
+            }
+        }
+    }
 }

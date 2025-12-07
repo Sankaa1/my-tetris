@@ -621,6 +621,9 @@ rgbToHex(r, g, b) {
         });
 
         this.clearCache();
+        
+        // Redémarrer la boucle de rendu après cleanup
+        this.startRenderLoop();
     }
 
     /* addParticleStyles() {
