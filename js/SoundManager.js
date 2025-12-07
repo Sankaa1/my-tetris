@@ -52,10 +52,36 @@ class SoundManager {
         const menu1 = new Audio('src/audio/start_jingle.wav');
         this.musicTracks.menu = [menu1];
 
-        // Musiques en jeu
+        // Musiques en jeu - toutes les musiques disponibles
         const game1 = new Audio('src/audio/bgmusic.wav');
         const game2 = new Audio('src/audio/blue.mp3');
-        this.musicTracks.game = [game1, game2];
+        const game3 = new Audio('src/audio/arturia-acid.wav');
+        const game4 = new Audio('src/audio/doctor-dreamchip.wav');
+        const game5 = new Audio('src/audio/vaporwave.wav');
+        const game6 = new Audio('src/audio/xd250-full-mix.wav');
+        
+        this.musicTracks.game = [game1, game2, game3, game4, game5, game6];
+        
+        // Référence nommée pour accès facile
+        this.allGameMusic = {
+            'bgmusic': game1,
+            'blue': game2,
+            'arturia-acid': game3,
+            'doctor-dreamchip': game4,
+            'vaporwave': game5,
+            'xd250-full-mix': game6
+        };
+        
+        // Musique sélectionnée actuellement
+        this.selectedGameMusic = 'bgmusic';
+        
+        // Configuration FX - tous les effets avec flag enabled
+        this.fxConfig = {
+            lock: true,
+            maxCombo: true,
+            rotate: true,
+            gameover: true
+        };
         
         this.setupMusicHandlers();
         this.updateVolumes();
@@ -148,11 +174,19 @@ class SoundManager {
     }
 
     toggleMusic(enabled) {
+        console.log('[SoundManager.toggleMusic] enabled:', enabled, 'previous:', this.musicEnabled);
         this.musicEnabled = enabled;
         if (!enabled) {
             this.stopMusic();
         } else {
-            if (!this.currentMusic && this.currentPlaylist && this.currentPlaylist.length > 0) {
+            // Activation musique: si la playlist n'est pas définie, la configurer
+            if (!this.currentPlaylist || this.currentPlaylist.length === 0) {
+                console.log('[SoundManager.toggleMusic] Configuration de la playlist');
+                this.currentPlaylist = [this.getSelectedGameMusic()];
+                this.currentIndex = 0;
+            }
+            if (this.currentPlaylist && this.currentPlaylist.length > 0) {
+                console.log('[SoundManager.toggleMusic] Démarrage musique');
                 this.startCurrentTrack();
             }
         }
@@ -161,6 +195,7 @@ class SoundManager {
     }
 
     toggleFx(enabled) {
+        console.log('[SoundManager.toggleFx] enabled:', enabled, 'previous:', this.fxEnabled);
         this.fxEnabled = enabled;
         if (!enabled) {
             // Arrêter tous les sons en cours
@@ -179,7 +214,10 @@ class SoundManager {
                 fxEnabled: this.fxEnabled,
                 masterVolume: this.masterVolume,
                 sfxVolume: this.sfxVolume,
-                musicVolume: this.musicVolume
+                musicVolume: this.musicVolume,
+                selectedGameMusic: this.selectedGameMusic,
+                musicMode: this.musicMode,
+                fxConfig: this.fxConfig
             };
             localStorage.setItem(this._storageKey, JSON.stringify(payload));
         } catch (e) {
@@ -198,6 +236,9 @@ class SoundManager {
             if (typeof obj.masterVolume === 'number') this.masterVolume = this._clamp01(obj.masterVolume);
             if (typeof obj.sfxVolume === 'number') this.sfxVolume = this._clamp01(obj.sfxVolume);
             if (typeof obj.musicVolume === 'number') this.musicVolume = this._clamp01(obj.musicVolume);
+            if (typeof obj.selectedGameMusic === 'string') this.selectedGameMusic = obj.selectedGameMusic;
+            if (typeof obj.musicMode === 'string') this.musicMode = obj.musicMode;
+            if (typeof obj.fxConfig === 'object') this.fxConfig = { ...this.fxConfig, ...obj.fxConfig };
         } catch (e) {
             console.warn('Impossible de charger les réglages audio:', e);
         }
@@ -205,6 +246,46 @@ class SoundManager {
 
     _clamp01(v) {
         return Math.max(0, Math.min(1, v));
+    }
+
+    // Sélectionner une musique de jeu
+    setGameMusic(trackName) {
+        if (!this.allGameMusic[trackName]) {
+            console.warn(`Musique "${trackName}" introuvable`);
+            return;
+        }
+        console.log('[SoundManager.setGameMusic] Changement vers:', trackName);
+        this.selectedGameMusic = trackName;
+        this.saveSettings();
+    }
+
+    // Obtenir la musique actuellement sélectionnée
+    getSelectedGameMusic() {
+        return this.allGameMusic[this.selectedGameMusic];
+    }
+
+    // Obtenir la liste des musiques disponibles
+    getAvailableGameMusic() {
+        return Object.keys(this.allGameMusic);
+    }
+
+    // Activer/désactiver un effet spécifique
+    toggleFxType(fxName, enabled) {
+        if (this.fxConfig.hasOwnProperty(fxName)) {
+            console.log('[SoundManager.toggleFxType]', fxName, ':', enabled);
+            this.fxConfig[fxName] = enabled;
+            this.saveSettings();
+        }
+    }
+
+    // Vérifier si un effet spécifique est activé
+    isFxEnabled(fxName) {
+        return this.fxConfig[fxName] !== false;
+    }
+
+    // Obtenir la configuration de tous les FX
+    getFxConfig() {
+        return { ...this.fxConfig };
     }
 
     // Arrêter tous les effets sonores
@@ -225,6 +306,9 @@ class SoundManager {
     // Refonte complète du système de lecture
     play(soundName) {
         if (!this.enabled || !this.fxEnabled) return;
+        
+        // Vérifier si ce FX spécifique est activé
+        if (!this.isFxEnabled(soundName)) return;
 
         const pool = this.sfx[soundName];
         if (!pool) {
@@ -296,8 +380,36 @@ class SoundManager {
     }
 
     playGameMusic(mode = 'single') {
-        if (!this.enabled || !this.musicEnabled) return;
-        this.playPlaylist('game', mode);
+        console.log('[SoundManager.playGameMusic] Mode:', mode, 'Music enabled:', this.musicEnabled);
+        
+        // Configurer la playlist indépendamment de musicEnabled
+        if (mode === 'playlist') {
+            // Mode playlist: toutes les musiques en boucle
+            console.log('[SoundManager.playGameMusic] Configuration mode PLAYLIST');
+            this.stopMusic();
+            this.currentPlaylist = this.musicTracks.game;
+            this.currentIndex = 0;
+            this.musicMode = 'playlist';
+        } else {
+            // Mode single: juste la musique sélectionnée
+            console.log('[SoundManager.playGameMusic] Configuration mode SINGLE avec:', this.selectedGameMusic);
+            const selectedTrack = this.getSelectedGameMusic();
+            if (!selectedTrack) {
+                console.warn('[SoundManager.playGameMusic] Piste sélectionnée non trouvée');
+                return;
+            }
+            
+            this.stopMusic();
+            this.currentPlaylist = [selectedTrack];
+            this.currentIndex = 0;
+            this.musicMode = 'single';
+        }
+        
+        // Démarrer la lecture si la musique est activée
+        if (this.musicEnabled) {
+            console.log('[SoundManager.playGameMusic] Lancement de la musique');
+            this.startCurrentTrack();
+        }
     }
 
     playPlaylist(name, mode = 'single') {

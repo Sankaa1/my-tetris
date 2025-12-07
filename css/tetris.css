@@ -464,6 +464,109 @@ kbd:hover {
 .audio-settings,
 .final-stats { margin-bottom: 30px; }
 
+/* ================== SÉLECTEURS AUDIO ================== */
+
+.music-selector {
+    margin-bottom: 25px;
+    padding: 15px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    border: 1px solid rgba(0,255,255,0.2);
+}
+
+.music-selector > label:first-child {
+    display: block;
+    color: #00ffff;
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+}
+
+.music-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.music-btn {
+    padding: 8px 12px;
+    background: rgba(0,255,255,0.1);
+    color: #ffffff;
+    border: 2px solid rgba(0,255,255,0.3);
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.music-btn:hover {
+    background: rgba(0,255,255,0.2);
+    border-color: rgba(0,255,255,0.6);
+}
+
+.music-btn.active {
+    background: rgba(0,255,255,0.3);
+    border-color: #00ffff;
+    color: #00ffff;
+    box-shadow: 0 0 10px rgba(0,255,255,0.4);
+}
+
+.playlist-mode {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #ffffff;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.playlist-mode input {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+}
+
+.fx-selector {
+    margin-bottom: 25px;
+    padding: 15px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    border: 1px solid rgba(0,255,255,0.2);
+}
+
+.fx-selector > label {
+    display: block;
+    color: #00ffff;
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+}
+
+.fx-checkboxes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.fx-checkboxes label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #ffffff;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.fx-checkboxes input {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    accent-color: #00ffff;
+}
+
 /* Scrollbar custom */
 .scores-list::-webkit-scrollbar { width: 8px; }
 .scores-list::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 4px; }

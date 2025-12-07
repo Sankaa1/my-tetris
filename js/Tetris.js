@@ -223,7 +223,8 @@ class Tetris {
 
         if (this.sound) {
             this.sound.stopMusic?.();
-            this.sound.playGameMusic?.('playlist');
+            console.log('[Tetris.startGame] Mode musique:', this.sound.musicMode);
+            this.sound.playGameMusic?.(this.sound.musicMode);
         }
 
         this.startGameLoop();
@@ -640,6 +641,8 @@ class Tetris {
             clearInterval(this.gameLoop);
             this.stopTimer();
             $('#pause-overlay').addClass('active');
+            // Resynchroniser l'UI audio avec l'état réel du SoundManager
+            this.syncAudioUI();
         } else if (this.gameState === 'paused') {
             this.gameState = 'playing';
             this.startGameLoop();
@@ -648,6 +651,36 @@ class Tetris {
             }
             $('#pause-overlay').removeClass('active');
         }
+    }
+
+    syncAudioUI() {
+        console.log('[SyncAudioUI] Synchronisation UI audio avec état SoundManager');
+        console.log('[SyncAudioUI] Music enabled:', this.sound.musicEnabled, 'FX enabled:', this.sound.fxEnabled);
+        
+        // Synchroniser les toggles généraux
+        $('.music-toggle').prop('checked', this.sound.musicEnabled);
+        $('.fx-toggle').prop('checked', this.sound.fxEnabled);
+        
+        // Synchroniser les sliders de volume
+        $('.music-volume').val(this.sound.musicVolume * 100);
+        $('.fx-volume').val(this.sound.sfxVolume * 100);
+        
+        // Synchroniser la sélection de musique
+        $('.music-btn').removeClass('active');
+        $(`.music-btn[data-music="${this.sound.selectedGameMusic}"]`).addClass('active');
+        console.log('[SyncAudioUI] Musique sélectionnée:', this.sound.selectedGameMusic);
+        
+        // Synchroniser le mode playlist
+        const isPlaylistMode = this.sound.musicMode === 'playlist';
+        $('.playlist-toggle').prop('checked', isPlaylistMode);
+        console.log('[SyncAudioUI] Mode playlist:', isPlaylistMode);
+        
+        // Synchroniser les effets spécifiques
+        const fxConfig = this.sound.getFxConfig();
+        Object.keys(fxConfig).forEach(fxName => {
+            $(`.fx-check[data-fx="${fxName}"]`).prop('checked', fxConfig[fxName]);
+            console.log('[SyncAudioUI] FX', fxName + ':', fxConfig[fxName]);
+        });
     }
 
     resetGame() {
@@ -1035,53 +1068,125 @@ $(document).ready(() => {
     
     window.tetris = new Tetris({ soundManager: sound });
 
-    // Toggles audio
-    $('.music-toggle').prop('checked', sound.musicEnabled);
-    $('.fx-toggle').prop('checked', sound.fxEnabled);
+    // Fonction pour initialiser les contrôles audio
+    function initAudioControls() {
+        console.log('[initAudioControls] Initialisation des contrôles audio');
+        
+        // Synchroniser l'UI avec l'état du SoundManager
+        syncAllAudioUI();
 
-    // Bascule on - off
-    $('.music-toggle').on('change', function () {
-        const checked = this.checked;
+        // === DÉLÉGATION D'ÉVÉNEMENTS POUR ÉVITER LES DOUBLONS ===
+        
+        // Sélection de musique (boutons)
+        $(document).on('click', '.music-btn', function() {
+            const trackName = $(this).data('music');
+            console.log('[initAudioControls] Clic bouton musique:', trackName);
+            sound.setGameMusic(trackName);
+            
+            // Si la musique est activée, relancer avec la nouvelle piste
+            if (sound.musicEnabled) {
+                console.log('[initAudioControls] Musique activée, relance avec nouvelle piste');
+                sound.playGameMusic(sound.musicMode);
+            }
+            
+            updateMusicButtonStates();
+        });
 
-        $('.music-toggle').prop('checked', checked);
+        // Mode playlist (toggle)
+        $(document).on('change', '.playlist-toggle', function() {
+            const mode = this.checked ? 'playlist' : 'single';
+            console.log('[initAudioControls] Mode playlist changé vers:', mode);
+            sound.musicMode = mode;
+            sound.saveSettings();
+            
+            // Si la musique est activée, relancer avec le nouveau mode
+            if (sound.musicEnabled && sound.currentMusic) {
+                console.log('[initAudioControls] Musique en cours, relance avec nouveau mode:', mode);
+                sound.playGameMusic(mode);
+            }
+        });
 
-        sound.toggleMusic(checked);
-    });
+        // Sélection d'effets individuels
+        $(document).on('change', '.fx-check', function() {
+            const fxName = $(this).data('fx');
+            const enabled = this.checked;
+            console.log('[initAudioControls] FX', fxName, 'changé vers:', enabled);
+            sound.toggleFxType(fxName, enabled);
+        });
+        
+        // Bascule on/off musique générale
+        $(document).on('change', '.music-toggle', function() {
+            const checked = this.checked;
+            console.log('[initAudioControls] Music toggle changé vers:', checked);
+            // Synchroniser TOUS les toggles de musique
+            $('.music-toggle').prop('checked', checked);
+            sound.toggleMusic(checked);
+        });
 
-    $('.fx-toggle').on('change', function() {
-        const checked = this.checked;
+        // Bascule on/off effets généraux
+        $(document).on('change', '.fx-toggle', function() {
+            const checked = this.checked;
+            console.log('[initAudioControls] FX toggle changé vers:', checked);
+            // Synchroniser TOUS les toggles d'effets
+            $('.fx-toggle').prop('checked', checked);
+            sound.toggleFx(checked);
+        });
 
-        $('.fx-toggle').prop('checked', checked);
-        sound.toggleFx(checked);
-    });
-
-    // Gestion volume des sons
-    $('.music-volume')
-        // valeur initiale dans tous les sliders
-        .val(sound.musicVolume * 100)
-        // synchronisation
-        .on('input', function () {
+        // Gestion volume musique
+        $(document).on('input', '.music-volume', function() {
             const value = this.value;
-
-            // Mettre tous les sliders "musique à cette valeur"
+            console.log('[initAudioControls] Volume musique:', value);
+            // Synchroniser tous les sliders de volume musique
             $('.music-volume').val(value);
-
-            // Mise à jour SoundManager
             sound.setMusicVolume(value / 100);
         });
 
-    // Effets
-    $('.fx-volume')
-        .val(sound.sfxVolume * 100)
-        .on('input', function () {
+        // Gestion volume effets
+        $(document).on('input', '.fx-volume', function() {
             const value = this.value;
-
+            console.log('[initAudioControls] Volume effets:', value);
+            // Synchroniser tous les sliders de volume effets
             $('.fx-volume').val(value);
             sound.setSfxVolume(value / 100);
         });
-        //console.log(sound.musicVolume);
-        //console.log(sound.sfxVolume);
-   
+    }
+
+    // Fonction pour synchroniser TOUS les éléments audio UI
+    function syncAllAudioUI() {
+        console.log('[syncAllAudioUI] Synchronisation complète UI');
+        
+        // Toggles généraux
+        $('.music-toggle').prop('checked', sound.musicEnabled);
+        $('.fx-toggle').prop('checked', sound.fxEnabled);
+
+        // Sliders de volume
+        $('.music-volume').val(sound.musicVolume * 100);
+        $('.fx-volume').val(sound.sfxVolume * 100);
+
+        // Sélection de musique
+        updateMusicButtonStates();
+
+        // Mode playlist
+        const isPlaylistMode = sound.musicMode === 'playlist';
+        $('.playlist-toggle').prop('checked', isPlaylistMode);
+
+        // Sélection d'effets individuels
+        const fxConfig = sound.getFxConfig();
+        Object.keys(fxConfig).forEach(fxName => {
+            $(`.fx-check[data-fx="${fxName}"]`).prop('checked', fxConfig[fxName]);
+        });
+    }
+
+    // Fonction pour mettre à jour l'état des boutons de musique
+    function updateMusicButtonStates() {
+        $('.music-btn').removeClass('active');
+        $(`.music-btn[data-music="${sound.selectedGameMusic}"]`).addClass('active');
+    }
+
+    // Initialiser les contrôles
+    initAudioControls();
+
+    // Préventions des raccourcis clavier
     document.addEventListener('keydown', function(e) {
         const codesToPrevent = ['Space', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown'];
         if (codesToPrevent.includes(e.code)) {
