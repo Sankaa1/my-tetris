@@ -36,6 +36,14 @@ class SoundManager {
         this.sfxVolume = 0.5;
         this.musicVolume = 0.5;
 
+        // Configuration FX par défaut (avant loadSettings pour ne pas être écrasée)
+        this.fxConfig = {
+            lock: true,
+            maxCombo: true,
+            rotate: true,
+            gameover: true
+        };
+
         // Charger les réglages persistés si disponibles
         this._storageKey = 'tetrisAudioSettings';
         this.loadSettings();
@@ -74,14 +82,6 @@ class SoundManager {
         
         // Musique sélectionnée actuellement
         this.selectedGameMusic = 'bgmusic';
-        
-        // Configuration FX - tous les effets avec flag enabled
-        this.fxConfig = {
-            lock: true,
-            maxCombo: true,
-            rotate: true,
-            gameover: true
-        };
         
         this.setupMusicHandlers();
         this.updateVolumes();
